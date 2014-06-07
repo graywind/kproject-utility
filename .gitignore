@@ -1,0 +1,4 @@
+#gedit loves its tempfiles
+*~
+#output of build.sh (binary)
+/kproject-utility
