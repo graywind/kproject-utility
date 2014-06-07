@@ -40,30 +40,8 @@ public class MyGet {
 
 }
 
- public static class Extensions
-    {
-        public static void WriteToConsole<T>(this IList<T> collection)
-        {
-            WriteToConsole<T>(collection, "\t");
-        }
 
-        public static void WriteToConsole<T>(this IList<T> collection, string delimiter)
-        {
-             collection.FastForEach(item => Console.Write("{0}{1}", item.ToString(), delimiter));
-        }
-
-        public static void FastForEach<T>(this IList<T> collection, Action<T> actionToPerform)
-        {
-            int count = collection.Count();
-            for (int i = 0; i < count; ++i)
-            {
-                actionToPerform(collection[i]);    
-            }
-            Console.WriteLine();
-        }
-    }
-
-class Hello {
+class KProjectUtility {
  	public static List<MyGet> myget;// = new List<MyGet>();
 	//Main Window
 	public static Window window;
@@ -126,8 +104,8 @@ class Hello {
 
 	public static void FetchXml_Clicked(object sender, EventArgs e)
 	{
-		XElement FetchedFeed = XElement.Load("https://www.myget.org/F/aspnetvnext/api/v2/GetUpdates%28%29?packageIds=%27KRE-mono45-x86%27&versions=%270.0%27&includePrerelease=true&includeAllVersions=true");
-		//XElement FetchedFeed = XElement.Load("updates.xml");
+		//XElement FetchedFeed = XElement.Load("https://www.myget.org/F/aspnetvnext/api/v2/GetUpdates%28%29?packageIds=%27KRE-mono45-x86%27&versions=%270.0%27&includePrerelease=true&includeAllVersions=true");
+		XElement FetchedFeed = XElement.Load("updates.xml");
 		MygetFeedToTreeStore ( FetchedFeed );
 
 	}
