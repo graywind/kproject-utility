@@ -9,7 +9,7 @@ using System.Xml.Serialization;
 
 
 class KProjectUtility {
- 	public static List<MyGet> packagelist;// = new List<MyGet>();
+ 	public static List<MyGet> packagelist;
 	//Main Window
 	public static Window window;
 
@@ -60,6 +60,7 @@ class KProjectUtility {
 	public static void downloadButton_Clicked (object o, EventArgs args)
     	{
         	System.Console.WriteLine ("not implemented yet");
+		TestPop();
     	}
 
         public static void QuitButton_Clicked(object sender, EventArgs e)
@@ -71,7 +72,11 @@ class KProjectUtility {
 
 	public static void FetchXml_Clicked(object sender, EventArgs e)
 	{
-		//string url = "https://www.myget.org/F/aspnetvnext/api/v2/GetUpdates%28%29?packageIds=%27KRE-mono45-x86%27&versions=%270.0%27&includePrerelease=true&includeAllVersions=true";
+		/*
+		string url = "https://www.myget.org/F/aspnetvnext/api/v2/GetUpdates()" +
+			"?packageIds='KRE-mono45-x86'&versions='0.0'" + 
+			"&includePrerelease=true&includeAllVersions=true";
+		*/
 		string url = "updates.xml";
 		packagelist = MyGet.MygetFeed (url);
 		DrawApp( MainTree ( TreeStoreGenerator () ) );
@@ -83,7 +88,8 @@ class KProjectUtility {
 
 
 
-	//error CS0234: The type or namespace name `TreeModel' does not exist in the namespace `Gtk'. Are you missing an assembly reference?
+	//error CS0234: The type or namespace name `TreeModel' does not exist in the namespace `Gtk'. 
+	//Are you missing an assembly reference?
 	/*
 	int NormalPackageCompareNodes (Gtk.TreeModel model, Gtk.TreeIter a, Gtk.TreeIter b)
 		{
@@ -100,7 +106,8 @@ class KProjectUtility {
 		 TreeIter iter;
 
 		 if(selection.GetSelected(out model, out iter)){
- 			Console.WriteLine("Selected Value:"+(sender as TreeView).Model.GetValue (iter, 0).ToString()+(sender as TreeView).Model.GetValue (iter, 2).ToString());
+ 			Console.WriteLine("Selected Value:"+(sender as TreeView).Model.GetValue (iter, 0).ToString() +
+					(sender as TreeView).Model.GetValue (iter, 2).ToString());
  		}
  	}
 
@@ -220,28 +227,69 @@ class KProjectUtility {
 
 	public static Gtk.ListStore EmptyStore ()
 	{
-		Gtk.ListStore packageListStore = new Gtk.ListStore (typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
+		Gtk.ListStore packageListStore	= new Gtk.ListStore 
+			(typeof (string),
+			typeof (string),
+			typeof (string), 
+			typeof (string),
+			typeof (string), 
+			typeof (string), 
+			typeof (string),
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string));
 		return packageListStore;	
 	}
 
 
 	public static Gtk.ListStore TreeStoreGenerator ()
 	{
-		Gtk.ListStore packageListStore = new Gtk.ListStore (typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string), typeof (string));
+		Gtk.ListStore packageListStore = new Gtk.ListStore 
+			(typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string), 
+			typeof (string));
 
-		packagelist.ForEach(wow => packageListStore.AppendValues(wow.packageid, wow.version, wow.content, wow.published.ToString(), wow.licenseurl, wow.licensenames, wow.latestversion.ToString(), wow.packagehash, wow.packagehashalgorithm, wow.packagesize, wow.summary, wow.versiondownloadcount.ToString())); 
-
-
-		
- 		
+		packagelist.ForEach(
+			wow => packageListStore.AppendValues(
+				wow.packageid, 
+				wow.version, 
+				wow.content, 
+				wow.published.ToString(), 
+				wow.licenseurl, 
+				wow.licensenames, 
+				wow.latestversion.ToString(), 
+				wow.packagehash, 
+				wow.packagehashalgorithm, 
+				wow.packagesize, 
+				wow.summary, 
+				wow.versiondownloadcount.ToString())
+			); 
 		return packageListStore;	
 	}
 	
 
-	public static void InitialDraw()
+	public static void TestPop ()
 	{
-		
+	    var dialog = new Gtk.MessageDialog (
+		window, Gtk.DialogFlags.Modal,
+		Gtk.MessageType.Info, 
+		Gtk.ButtonsType.Close, 
+		"Test messagedialog window, woop woop!\n\n\n\n\nwoop?");
+	    dialog.Run ();
+	    dialog.Destroy ();
 	}
+
 	public static void DrawApp ( Gtk.TreeView localTree )
 	{
 		if (firstrun == false)
