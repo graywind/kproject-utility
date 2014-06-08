@@ -44,6 +44,8 @@ class KProjectUtility {
 
 		window.SetDefaultSize (800, 600);
 
+		window.SetPosition(Gtk.WindowPosition.Center);
+
 		window.ShowAll ();
 
 		Application.Run ();
@@ -59,8 +61,8 @@ class KProjectUtility {
 
 	public static void downloadButton_Clicked (object o, EventArgs args)
     	{
-        	System.Console.WriteLine ("not implemented yet");
-		TestPop();
+        	//System.Console.WriteLine ("not implemented yet");
+		TestWindow();
     	}
 
         public static void QuitButton_Clicked(object sender, EventArgs e)
@@ -84,21 +86,6 @@ class KProjectUtility {
 
 	}
 	
-	
-
-
-
-	//error CS0234: The type or namespace name `TreeModel' does not exist in the namespace `Gtk'. 
-	//Are you missing an assembly reference?
-	/*
-	int NormalPackageCompareNodes (Gtk.TreeModel model, Gtk.TreeIter a, Gtk.TreeIter b)
-		{
-			string name1 = (string)model.GetValue (a, NormalPackageNameID);
-			string name2 = (string)model.GetValue (b, NormalPackageNameID);
-			return string.Compare (name1, name2, true);
-		}
-	*/
-
 	public static void tree_CursorChanged(object sender, EventArgs e)
  	{
 		 TreeSelection selection = (sender as TreeView).Selection;
@@ -278,16 +265,31 @@ class KProjectUtility {
 		return packageListStore;	
 	}
 	
-
 	public static void TestPop ()
 	{
 	    var dialog = new Gtk.MessageDialog (
-		window, Gtk.DialogFlags.Modal,
+		window, 
+		Gtk.DialogFlags.Modal,
 		Gtk.MessageType.Info, 
 		Gtk.ButtonsType.Close, 
 		"Test messagedialog window, woop woop!\n\n\n\n\nwoop?");
 	    dialog.Run ();
 	    dialog.Destroy ();
+	}
+
+	public static void TestWindow ()
+	{
+		Window testwindow = new Window("Download");
+		testwindow.TransientFor = window;
+		testwindow.SetPosition(Gtk.WindowPosition.CenterOnParent);	
+		testwindow.Modal = true;	
+		testwindow.SetDefaultSize (500, 100);
+
+		Label label1 = new Label("Not Implemented");
+	
+		testwindow.Add(label1);
+
+		testwindow.ShowAll();
 	}
 
 	public static void DrawApp ( Gtk.TreeView localTree )
