@@ -2,9 +2,14 @@ using Gtk;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.IO;
+using System.Diagnostics; //provides Stopwatch
+using System.ComponentModel;
 using System.Xml.Linq;
 using System.Xml;
 using System.Xml.Serialization;
+using System.IO.Compression.ZipArchive;
 
 
 
@@ -12,6 +17,17 @@ class KProjectUtility {
  	public static List<MyGet> packagelist;
 	//Main Window
 	public static Window window;
+	public static Window downloadWindow;
+
+	//Download
+	public static WebClient webClient;
+	public static Stopwatch sw;
+	public static Label labelSpeed;
+	public static Label labelPerc;
+	public static Label labelDownloaded;
+	public static Label downloadLabel;
+	public static ProgressBar progressBar;
+	
 
 	//Boxes
 	public static VBox box1;
@@ -20,6 +36,8 @@ class KProjectUtility {
 	
 	//Labels and separators;
 	public static HSeparator separator;
+
+
 
 	public static bool firstrun = true;
 
@@ -38,6 +56,7 @@ class KProjectUtility {
 	
 		Button downloadButton = new Button ("Download");
 		downloadButton.Clicked += new EventHandler (downloadButton_Clicked);
+		
 
 		DrawApp( MainTree ( EmptyStore () ) ); 
 
@@ -62,7 +81,8 @@ class KProjectUtility {
 	public static void downloadButton_Clicked (object o, EventArgs args)
     	{
         	//System.Console.WriteLine ("not implemented yet");
-		TestWindow();
+		DownloadWindow();
+		//InfoModal("Download completed!", window);
     	}
 
         public static void QuitButton_Clicked(object sender, EventArgs e)
@@ -265,31 +285,67 @@ class KProjectUtility {
 		return packageListStore;	
 	}
 	
-	public static void TestPop ()
+	public static void ExceptionModal (string exceptionText, Window parentWindow)
 	{
 	    var dialog = new Gtk.MessageDialog (
-		window, 
+		parentWindow, 
 		Gtk.DialogFlags.Modal,
-		Gtk.MessageType.Info, 
+		Gtk.MessageType.Error, 
 		Gtk.ButtonsType.Close, 
-		"Test messagedialog window, woop woop!\n\n\n\n\nwoop?");
+		exceptionText);
 	    dialog.Run ();
 	    dialog.Destroy ();
 	}
 
-	public static void TestWindow ()
+	public static void InfoModal (string infoText, Window parentWindow)
 	{
-		Window testwindow = new Window("Download");
-		testwindow.TransientFor = window;
-		testwindow.SetPosition(Gtk.WindowPosition.CenterOnParent);	
-		testwindow.Modal = true;	
-		testwindow.SetDefaultSize (500, 100);
+	    var dialog = new Gtk.MessageDialog (
+		parentWindow, 
+		Gtk.DialogFlags.Modal,
+		Gtk.MessageType.Info, 
+		Gtk.ButtonsType.Close, 
+		infoText);
+	    dialog.Run ();
+	    dialog.Destroy ();
+	}
 
-		Label label1 = new Label("Not Implemented");
+	public static void DownloadWindow ()
+	{
+
+		sw = new Stopwatch();
+		labelSpeed = new Label();
+		labelPerc = new Label();
+		labelDownloaded = new Label();
+		progressBar = new ProgressBar();
+		downloadWindow = new Window("Download Window");
+
+		downloadWindow.BorderWidth = 10;
+		downloadWindow.TransientFor = window;
+		downloadWindow.SetPosition(Gtk.WindowPosition.CenterOnParent);	
+		downloadWindow.Modal = true;	
+		downloadWindow.SetDefaultSize (500, 100);
+		
+		VBox downloadVBox = new VBox (false, 0);
 	
-		testwindow.Add(label1);
+		downloadLabel = new Label("");
+		progressBar.Text = "Download starting...";
+		progressBar.ShowText = true;
+		progressBar.Fraction = 0.0;
 
-		testwindow.ShowAll();
+		Button cancelDownloadButton = new Button ("Cancel");
+		cancelDownloadButton.Clicked += new EventHandler (CancelDownload);
+
+		downloadVBox.PackStart (progressBar, true, true, 5);
+		downloadVBox.PackStart (cancelDownloadButton, true, true, 5);
+		downloadVBox.PackStart (downloadLabel, true, true, 5);
+		
+	
+		downloadWindow.Add(downloadVBox);
+
+		DownloadFile("http://mirrors.kernel.org/archlinux/iso/2014.05.01/archlinux-2014.05.01-dual.iso", Environment.GetEnvironmentVariable("HOME") + "/test.iso");
+		
+		downloadWindow.ShowAll();
+		//dl.progressBar.Window.ProcessUpdates(true);
 	}
 
 	public static void DrawApp ( Gtk.TreeView localTree )
@@ -337,4 +393,80 @@ class KProjectUtility {
  
                 window.Add(box1);
 	}
+
+	public static void DownloadFile(string urlAddress, string location)
+	{
+	    using (webClient = new WebClient())
+	    {
+		webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(Completed);
+		webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(ProgressChanged);
+
+		Uri URL = new Uri(urlAddress);
+	 
+		sw.Start();
+	 
+		try
+		{
+
+		    webClient.DownloadFileAsync(URL, location);
+		}
+		catch (Exception ex)
+		{
+		    ExceptionModal(ex.Message, downloadWindow);
+		}
+	    }
+	}
+	
+	private static void ProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+	{
+	    // Calculate download speed and output it to labelSpeed.
+	    labelSpeed.Text = string.Format("{0} kb/s", (e.BytesReceived / 1024d / sw.Elapsed.TotalSeconds).ToString("0.00"));
+	 
+	    // Update the progressbar percentage only when the value is not the same.
+	    progressBar.Fraction = e.ProgressPercentage/100.0;
+	 
+	    // Show the percentage on our label.
+	    labelPerc.Text = e.ProgressPercentage.ToString() + "%";
+	 
+	    // Update the label with how much data have been downloaded so far and the total size of the file we are currently downloading
+	    labelDownloaded.Text = string.Format("{0} MB's / {1} MB's",
+		(e.BytesReceived / 1024d / 1024d).ToString("0.00"),
+		(e.TotalBytesToReceive / 1024d / 1024d).ToString("0.00"));
+
+	    // Gtk.ProgressBar supports superimposed text so label is not needed.
+	    progressBar.Text = string.Format("{0} MB's / {1} MB's",
+		(e.BytesReceived / 1024d / 1024d).ToString("0.00"),
+		(e.TotalBytesToReceive / 1024d / 1024d).ToString("0.00"));
+	   
+	    
+	}
+
+	public static void CancelDownload(object sender, EventArgs e)
+	{	
+		if (webClient != null)
+		{
+			webClient.CancelAsync();
+			webClient = null;
+		}
+	}	
+
+	public static void Completed(object sender, AsyncCompletedEventArgs e)
+	{
+	    sw.Reset();
+	 
+	    if (e.Cancelled == true)
+	    {
+		//InfoModal("Download has been canceled.", downloadWindow);
+		progressBar.Text = "Cancelled!";
+		progressBar.Fraction = 0.0;
+	    }
+	    else
+	    {
+		//InfoModal("Download completed!", downloadWindow);
+	    }
+	}
+
+	
+	
+
 }
