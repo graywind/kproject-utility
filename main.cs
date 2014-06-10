@@ -94,10 +94,6 @@ class KProjectUtility {
 	{
 		if(Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin")) 
 		{
-			Console.WriteLine(
-			"Replacing link to: " + 
-			Mono.Unix.UnixPath.ReadLink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin")
-			);
 			Mono.Unix.Native.Syscall.unlink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin");
 		}
 
@@ -477,7 +473,7 @@ class KProjectUtility {
 		labelPerc = new Label();
 		labelDownloaded = new Label();
 		progressBar = new ProgressBar();
-		downloadWindow = new Window("Download Window");
+		downloadWindow = new Window(selectedPackageName);
 
 		downloadWindow.BorderWidth = 10;
 		downloadWindow.TransientFor = window;
@@ -627,7 +623,7 @@ class KProjectUtility {
 		//InfoModal("Download completed!", downloadWindow);
 		progressBar.Text = "Unpacking...";
 		UnzipFile(selectedPackageName);
-		
+		downloadWindow.Destroy();
 		
 	    }
 	}
