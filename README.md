@@ -13,4 +13,6 @@ The download functionality downloads the selected nupkg to packages, unzips to a
 
 If you want to quickly switch between versions, add ~/.kproj/bin to your current PATH and hit the download button. If it detects that the install exists already it will just switch the symlink and not download again.
 
+Note: This program executes the unzip command directly, if you receive an error there check that it exists.
+
 ![Downloading the nupkg](/screenshot.png?raw=true "Downloading the nupkg")
