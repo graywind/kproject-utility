@@ -3,14 +3,14 @@ kproject-utility
 
 A Gtk# utility for fetching the latest ASP.NET vNext snapshots.
 
-build.sh executes mcs with the proper flags and outputs a single binary 
-named kproject-utility.
+build.sh executes mcs with the proper flags and outputs a single binary named kproject-utility.
 
-For testing purposes this points to the updates.xml, if you want to
-test against the live API switch the comments on FetchXml_Clicked for 
-string url
+On first launch, it checks and creates ~/.kproj/installs and ~/.kproj/packages if they do not exist.
 
-The download functionality is incomplete and currently points to a Linux
-iso for testing.
+XML Feed used: https://www.myget.org/F/aspnetvnext/api/v2/GetUpdates()?packageIds='KRE-mono45-x86'&versions='0.0'&includePrerelease=true&includeAllVersions=true
 
-![First Screenshot](/screenshot.png?raw=true "First Screenshot")
+The download functionality downloads the selected nupkg to packages, unzips to a folder to a subdirectory in ~/.kproj/installs, makes the binaries executable and creates a symlink at ~/.kproj/bin
+
+If you want to quickly switch between versions, add ~/.kproj/bin to your current PATH and hit the download button. If it detects that the install exists already it will just switch the symlink and not download again.
+
+![Downloading the nupkg](/screenshot.png?raw=true "Downloading the nupkg")
