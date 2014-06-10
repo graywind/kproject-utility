@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Xml.Linq;
 using System.Xml;
 using System.Xml.Serialization;
+using Mono.Unix;
 
 
 
@@ -27,6 +28,10 @@ class KProjectUtility {
 	public static Label labelDownloaded;
 	public static Label downloadLabel;
 	public static ProgressBar progressBar;
+
+	//Selected Package
+	public static String selectedPackageName;
+	public static String selectedPackageUrl;
 	
 
 	//Boxes
@@ -46,7 +51,22 @@ class KProjectUtility {
 
 
 		Application.Init ();
-	 
+	 	
+		CheckDirectorySkeleton ();
+		
+		
+		
+		if(Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin")) 
+		{
+			Console.WriteLine(
+			"Symlink: " + 
+			Mono.Unix.UnixPath.ReadLink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin")
+			);
+			//File.Delete(Mono.Unix.UnixPath.ReadLink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin"));
+			Mono.Unix.Native.Syscall.unlink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin");
+		}
+		
+
 		window = new Window ("Project K");
 		window.BorderWidth = 10;
 
@@ -68,10 +88,128 @@ class KProjectUtility {
 		window.ShowAll ();
 
 		Application.Run ();
- 
-        }
+         }
 
+	public static void SetSymlink(string packagename)
+	{
+		if(Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin")) 
+		{
+			Console.WriteLine(
+			"Replacing link to: " + 
+			Mono.Unix.UnixPath.ReadLink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin")
+			);
+			Mono.Unix.Native.Syscall.unlink(Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin");
+		}
+
+		Mono.Unix.Native.Syscall.symlink(
+			Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs/" + packagename + "/bin", 
+			Environment.GetEnvironmentVariable("HOME") + "/.kproj/bin"
+		);
+	}
+
+	public static void CheckDirectorySkeleton ()
+	{
+		if(Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj"))
+		{
+			Console.WriteLine(".kproj exists!");
+		}
+		else
+		{
+			Console.WriteLine(".kproj missing! Creating...");
+			Directory.CreateDirectory(Environment.GetEnvironmentVariable("HOME") + "/.kproj");
+		}
+
+		if(Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/packages"))
+		{
+			Console.WriteLine(".kproj/packages exists!");
+		}
+		else
+		{
+			Console.WriteLine(".kproj/packages missing! Creating...");
+			Directory.CreateDirectory(Environment.GetEnvironmentVariable("HOME") + "/.kproj/packages");
+		}
+
+		if(Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs"))
+		{
+			Console.WriteLine(".kproj/installs exists!");
+		}
+		else
+		{
+			Console.WriteLine(".kproj/installs missing! Creating...");
+			Directory.CreateDirectory(Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs");
+		}
+		
+		
+	}	
+
+	public static void UnzipFile (string packagename)
+	{
+
+		Console.WriteLine("Passed name: " + packagename);
+
+		if(!Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs/" + packagename))
+		{
+			Directory.CreateDirectory(Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs/" + packagename);
+			Console.WriteLine("Package installation directory created.");
+		}
+		else
+		{ Console.WriteLine("Package installation directory exists!"); }
+
+		Console.WriteLine("unzip args: " + Environment.GetEnvironmentVariable("HOME") + "/.kproj/packages/" + packagename + ".nupkg -d " +
+			Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs/" + packagename);
+
+		var info = new ProcessStartInfo();
+		
+		info.FileName = "unzip";
+		info.Arguments = 
+			Environment.GetEnvironmentVariable("HOME") + 
+			"/.kproj/packages/" + 
+			packagename + 
+			".nupkg -d " +
+			Environment.GetEnvironmentVariable("HOME") + 
+			"/.kproj/installs/" + 
+			packagename;
+
+		info.UseShellExecute = false;
+		info.CreateNoWindow = true;
+
+		info.RedirectStandardOutput = true;
+		info.RedirectStandardError = true;
+
+		var p = Process.Start(info);
+		p.WaitForExit();
+		
+		string binpath = Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs/" + packagename + "/bin/";
+
+		// chmod 744 equivalent, almost wanted to call it directly with this mess :p
+		
+		Mono.Unix.Native.Syscall.chmod(binpath + "k", 
+			Mono.Unix.Native.FilePermissions.S_IRWXU | 
+			Mono.Unix.Native.FilePermissions.S_IRGRP |
+			Mono.Unix.Native.FilePermissions.S_IROTH
+		); 
+		Mono.Unix.Native.Syscall.chmod(binpath + "k-build", 
+			Mono.Unix.Native.FilePermissions.S_IRWXU | 
+			Mono.Unix.Native.FilePermissions.S_IRGRP |
+			Mono.Unix.Native.FilePermissions.S_IROTH
+		);
+		Mono.Unix.Native.Syscall.chmod(binpath + "klr", 
+			Mono.Unix.Native.FilePermissions.S_IRWXU | 
+			Mono.Unix.Native.FilePermissions.S_IRGRP |
+			Mono.Unix.Native.FilePermissions.S_IROTH
+		);
+		Mono.Unix.Native.Syscall.chmod(binpath + "kpm", 
+			Mono.Unix.Native.FilePermissions.S_IRWXU | 
+			Mono.Unix.Native.FilePermissions.S_IRGRP |
+			Mono.Unix.Native.FilePermissions.S_IROTH
+		);
+
+		SetSymlink(packagename);
 	
+		//Process.Start(info);
+		//Console.ReadLine();
+	}
+
 	public static void Window_Delete (object o, DeleteEventArgs args)
     	{
         	Application.Quit ();
@@ -81,8 +219,27 @@ class KProjectUtility {
 	public static void downloadButton_Clicked (object o, EventArgs args)
     	{
         	//System.Console.WriteLine ("not implemented yet");
-		DownloadWindow();
+		//public static String selectedPackageName;
+		//public static String selectedPackageUrl;
+		if (selectedPackageName != null && selectedPackageUrl != null  )
+		{
+			if(!Directory.Exists(Environment.GetEnvironmentVariable("HOME") + "/.kproj/installs/" + selectedPackageName))
+			{
+				DownloadWindow();
+			}
+			else 
+			{
+				SetSymlink(selectedPackageName);
+				InfoModal("Package already installed, toggling symlink.", window);
+				
+			}
+		}
+		else
+		{
+			InfoModal("Package not selected.", window);
+		}
 		//InfoModal("Download completed!", window);
+		
     	}
 
         public static void QuitButton_Clicked(object sender, EventArgs e)
@@ -94,12 +251,12 @@ class KProjectUtility {
 
 	public static void FetchXml_Clicked(object sender, EventArgs e)
 	{
-		/*
+		
 		string url = "https://www.myget.org/F/aspnetvnext/api/v2/GetUpdates()" +
 			"?packageIds='KRE-mono45-x86'&versions='0.0'" + 
 			"&includePrerelease=true&includeAllVersions=true";
-		*/
-		string url = "updates.xml";
+		
+		//string url = "updates.xml";
 		packagelist = MyGet.MygetFeed (url);
 		DrawApp( MainTree ( TreeStoreGenerator () ) );
 		window.ShowAll();
@@ -113,8 +270,11 @@ class KProjectUtility {
 		 TreeIter iter;
 
 		 if(selection.GetSelected(out model, out iter)){
- 			Console.WriteLine("Selected Value:"+(sender as TreeView).Model.GetValue (iter, 0).ToString() +
-					(sender as TreeView).Model.GetValue (iter, 2).ToString());
+ 			selectedPackageName = 
+					(sender as TreeView).Model.GetValue(iter,0).ToString() + "-" +
+					(sender as TreeView).Model.GetValue(iter,1).ToString();
+			selectedPackageUrl = (sender as TreeView).Model.GetValue(iter,2).ToString();
+			Console.WriteLine(selectedPackageName + " from " + selectedPackageUrl);
  		}
  	}
 
@@ -342,7 +502,9 @@ class KProjectUtility {
 	
 		downloadWindow.Add(downloadVBox);
 
-		DownloadFile("http://mirrors.kernel.org/archlinux/iso/2014.05.01/archlinux-2014.05.01-dual.iso", Environment.GetEnvironmentVariable("HOME") + "/test.iso");
+		DownloadFile(selectedPackageUrl, Environment.GetEnvironmentVariable("HOME") + "/.kproj/packages/" + selectedPackageName + ".nupkg" );
+
+		
 		
 		downloadWindow.ShowAll();
 		//dl.progressBar.Window.ProcessUpdates(true);
@@ -463,6 +625,10 @@ class KProjectUtility {
 	    else
 	    {
 		//InfoModal("Download completed!", downloadWindow);
+		progressBar.Text = "Unpacking...";
+		UnzipFile(selectedPackageName);
+		
+		
 	    }
 	}
 
